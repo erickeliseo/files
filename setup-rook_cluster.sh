@@ -19,8 +19,11 @@ kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/service-monitor.
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus-service.yaml
 
+# Extraer configuracion de Prometheus e insertar en ~/files/grafana-helm-values.yaml
+export URL=http://"$(kubectl -n rook-ceph -o jsonpath={.status.hostIP} get pod prometheus-rook-prometheus-0):9090"
+sed -i "s|url:|url: $URL|g" ~/files/grafana-helm-values.yaml
+
 ## Instalando Grafana
 echo -e "\u001b[32mGrafana\u001b[m\r\n"
 kubectl create -f ~/files/grafana-external-NodePort.yaml
-helm init
 helm install --name grafana-rook-cluster stable/grafana -f ~/files/grafana-helm-values.yaml
