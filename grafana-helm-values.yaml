@@ -7,3 +7,5 @@ datasources:
      url: echo "http://$(kubectl -n rook-ceph -o jsonpath={.status.hostIP} get pod prometheus-rook-prometheus-0):9090"
      access: proxy
      isDefault: true
+adminUser: admin
+adminPassword: strongpassword

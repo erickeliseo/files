@@ -12,6 +12,7 @@ kubectl create -f ~/rook/cluster/examples/kubernetes/ceph/operator.yaml
 kubectl create -f ~/rook/cluster/examples/kubernetes/ceph/cluster.yaml
 
 # Instalando Prometheus
+echo -e "\u001b[32mPrometheus\u001b[m\r\n"
 kubectl create -f ~/files/dashboard-external-NodePort.yaml
 kubectl create -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.15/bundle.yaml
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/service-monitor.yaml
@@ -19,6 +20,7 @@ kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus-service.yaml
 
 ## Instalando Grafana
+echo -e "\u001b[32mGrafana\u001b[m\r\n"
 kubectl create -f ~/files/grafana-external-NodePort.yaml
 helm init
 helm install --name grafana-rook-cluster stable/grafana -f ~/files/grafana-helm-values.yaml
