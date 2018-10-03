@@ -4,7 +4,7 @@ datasources:
    datasources:
    - name: Prometheus
      type: prometheus
-     url: http://
+     url:
      access: proxy
      isDefault: true
 adminUser: admin
