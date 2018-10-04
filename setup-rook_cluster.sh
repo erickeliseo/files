@@ -24,7 +24,6 @@ sleep 15
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
 sleep 15
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus-service.yaml
-sleep 15
 
 # Extraer configuracion de Prometheus e insertar en ~/files/grafana-helm-values.yaml
 #export URL=http://"$(kubectl -n rook-ceph -o jsonpath={.status.hostIP} get pod prometheus-rook-prometheus-0):9090"

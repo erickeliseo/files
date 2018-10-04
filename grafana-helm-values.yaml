@@ -9,3 +9,24 @@ datasources:
      isDefault: true
 adminUser: admin
 adminPassword: strongpassword
+dashboardProviders: {}
+dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/default
+dashboards: {}
+default:
+   some-dashboard:
+      json: |
+        $RAW_JSON
+prometheus-stats:
+      gnetId: 2842
+      revision: 7
+      datasource: Prometheus
