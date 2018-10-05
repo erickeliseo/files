@@ -14,17 +14,17 @@ echo -e "\u001b[32mWait for Kubernetes and Rook to be ready\u001b[m\r\n"
 kubectl create -f ~/rook/cluster/examples/kubernetes/ceph/operator.yaml
 sleep 5
 kubectl create -f ~/rook/cluster/examples/kubernetes/ceph/cluster.yaml
-15
+30
 # Instalando Prometheus
 echo -e "\u001b[32mPrometheus\u001b[m\r\n"
 kubectl create -f ~/files/dashboard-external-NodePort.yaml
 kubectl create -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.15/bundle.yaml
-sleep 15
+sleep 5
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/service-monitor.yaml
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
-sleep 15
+sleep 5
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus-service.yaml
-sleep 30
+sleep 5
 
 # Extraer configuracion de Prometheus e insertar en ~/files/grafana-helm-values.yaml
 export URL=http://"$(kubectl -n rook-ceph -o jsonpath={.status.hostIP} get pod prometheus-rook-prometheus-0):9090"
