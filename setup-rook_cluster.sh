@@ -34,7 +34,7 @@ sed -i "s|url:|url: $URL|g" ~/files/grafana-helm-values.yaml
 echo -e "\u001b[32mGrafana\u001b[m\r\n"
 kubectl create -f ~/files/grafana-external-NodePort.yaml
 helm install --name grafana-rook-cluster stable/grafana -f ~/files/grafana-helm-values.yaml
-sleep 60
+sleep 90
 # Extraer POD y URL de Grafana
 # Otra forma de Exportar el nombre del POD: export POD_NAME=$(kubectl get pods --namespace default -l "app=grafana-rook-cluster,component=" -o jsonpath="{.items[0].metadata.name}")
 export PODGRAFANA=$(kubectl get pods | grep grafana-rook-cluster | awk '{print $1}')
