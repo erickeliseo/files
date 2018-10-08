@@ -21,6 +21,7 @@ kubectl create -f ~/files/dashboard-external-NodePort.yaml
 kubectl create -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.15/bundle.yaml
 sleep 10
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/service-monitor.yaml
+60
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
 sleep 25
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus-service.yaml
@@ -29,6 +30,7 @@ sleep 60
 # Extraer configuracion de Prometheus e insertar en ~/files/grafana-helm-values.yaml
 export URL=http://"$(kubectl -n rook-ceph -o jsonpath={.status.hostIP} get pod prometheus-rook-prometheus-0):9090"
 sed -i "s|url:|url: $URL|g" ~/files/grafana-helm-values.yaml
+echo -e "\u001b[32mURLGRAFANA = $URL\u001b[m\r\n"
 
 ## Instalando Grafana
 echo -e "\u001b[32mGrafana\u001b[m\r\n"
