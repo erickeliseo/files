@@ -67,4 +67,7 @@ kubectl exec -it $PODGRAFANA -- bash -c "echo "}" >> /tmp/grafana-dashboard-Ceph
 
 kubectl exec -it $PODGRAFANA -- bash -c "sed -i 's/${DS_PROMETHEUS-INFRA}/Prometheus/g' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
+# ----------------
+kubectl cp ~/files/grafana-dashboard-Ceph-Cluster-2842.json $PODGRAFANA:tmp/
+
 kubectl exec -it $PODGRAFANA -- bash -c "cd /tmp ; curl --user admin:strongpassword 'http://localhost:3000/api/dashboards/db' -X POST -H 'Content-Type:application/json;charset=UTF-8' --data-binary @./grafana-dashboard-Ceph-Cluster-2842.json"
