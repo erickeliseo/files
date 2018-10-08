@@ -46,28 +46,28 @@ echo -e "\u001b[32mURLGRAFANA = $URLGRAFANA\u001b[m\r\n"
 # Instalando Dashboard de Rook en Grafana
 # Descarga el JSON del Dashboard 2842
 # De esta forma no funciono el Katacoda: kubectl exec -it $PODGRAFANA  curl https://grafana.com/api/dashboards/2842/revisions/7/download > /tmp/grafana-dashboard-Ceph-Cluster-2842.json
-kubectl exec -it $PODGRAFANA  -- bash -c "curl https://grafana.com/api/dashboards/2842/revisions/7/download > /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
-sleep 10
+#kubectl exec -it $PODGRAFANA  -- bash -c "curl https://grafana.com/api/dashboards/2842/revisions/7/download > /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#sleep 10
 
 # Elimina la primera linea /tmp/grafana-dashboard-Ceph-Cluster-2842.json
-kubectl exec -it $PODGRAFANA -- bash -c "sed -i '82d' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
-sleep 2
-kubectl exec -it $PODGRAFANA -- bash -c "sed -i '82i \      \"dashboard\": \"Prometheus\"\' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
-sleep 2
-kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1d' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#kubectl exec -it $PODGRAFANA -- bash -c "sed -i '82d' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#sleep 2
+#kubectl exec -it $PODGRAFANA -- bash -c "sed -i '82i \      \"dashboard\": \"Prometheus\"\' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#sleep 2
+#kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1d' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
 # Inserta linea /tmp/grafana-dashboard-Ceph-Cluster-2842.json
-kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1i \"\dashboard\"\: {' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1i \"\dashboard\"\: {' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
 # Inserta linea /tmp/grafana-dashboard-Ceph-Cluster-2842.json
-kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1i {' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1i {' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
 # Inserta linea /tmp/grafana-dashboard-Ceph-Cluster-2842.json
-kubectl exec -it $PODGRAFANA -- bash -c "echo "}" >> /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#kubectl exec -it $PODGRAFANA -- bash -c "echo "}" >> /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
-kubectl exec -it $PODGRAFANA -- bash -c "sed -i 's/${DS_PROMETHEUS-INFRA}/Prometheus/g' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+#kubectl exec -it $PODGRAFANA -- bash -c "sed -i 's/${DS_PROMETHEUS-INFRA}/Prometheus/g' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
 # ----------------
 kubectl cp ~/files/grafana-dashboard-Ceph-Cluster-2842.json $PODGRAFANA:tmp/
-
+sleep 10
 kubectl exec -it $PODGRAFANA -- bash -c "cd /tmp ; curl --user admin:strongpassword 'http://localhost:3000/api/dashboards/db' -X POST -H 'Content-Type:application/json;charset=UTF-8' --data-binary @./grafana-dashboard-Ceph-Cluster-2842.json"
