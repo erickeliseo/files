@@ -19,10 +19,10 @@ kubectl create -f ~/rook/cluster/examples/kubernetes/ceph/cluster.yaml
 echo -e "\u001b[32mPrometheus\u001b[m\r\n"
 kubectl create -f ~/files/dashboard-external-NodePort.yaml
 kubectl create -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.15/bundle.yaml
-sleep 5
+sleep 10
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/service-monitor.yaml
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
-sleep 5
+sleep 25
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus-service.yaml
 sleep 5
 
@@ -40,6 +40,8 @@ sleep 90
 #export POD_NAME=$(kubectl get pods --namespace default -l "app=grafana-rook-cluster,component=" -o jsonpath="{.items[0].metadata.name}")
 export PODGRAFANA=$(kubectl get pods | grep grafana-rook-cluster | awk '{print $1}')
 export URLGRAFANA=http://"$(kubectl  -o jsonpath={.status.hostIP} get pod "$(kubectl get pods | grep grafana-rook-cluster | awk '{print $1}')")":3000
+echo -e "\u001b[32mPODGRAFANA = $PODGRAFANA\u001b[m\r\n"
+echo -e "\u001b[32mURLGRAFANA = $URLGRAFANA\u001b[m\r\n"
 
 # Instalando Dashboard de Rook en Grafana
 # Descarga el JSON del Dashboard 2842
@@ -48,6 +50,10 @@ kubectl exec -it $PODGRAFANA  -- bash -c "curl https://grafana.com/api/dashboard
 sleep 10
 
 # Elimina la primera linea /tmp/grafana-dashboard-Ceph-Cluster-2842.json
+kubectl exec -it $PODGRAFANA -- bash -c "sed -i '82d' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+sleep 2
+kubectl exec -it $PODGRAFANA -- bash -c "sed -i '82i \      \"dashboard\": \"Prometheus\"\' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
+sleep 2
 kubectl exec -it $PODGRAFANA -- bash -c "sed -i '1d' /tmp/grafana-dashboard-Ceph-Cluster-2842.json"
 
 # Inserta linea /tmp/grafana-dashboard-Ceph-Cluster-2842.json
