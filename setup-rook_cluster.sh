@@ -19,7 +19,7 @@ kubectl create -f ~/rook/cluster/examples/kubernetes/ceph/cluster.yaml
 echo -e "\u001b[32mPrometheus\u001b[m\r\n"
 kubectl create -f ~/files/dashboard-external-NodePort.yaml
 kubectl create -f https://raw.githubusercontent.com/coreos/prometheus-operator/release-0.15/bundle.yaml
-sleep 10
+sleep 30
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/service-monitor.yaml
 60
 kubectl create -f ~/rook/cluster/examples/kubernetes/monitoring/prometheus.yaml
