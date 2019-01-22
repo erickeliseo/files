@@ -1,0 +1,457 @@
+
+# Limpiar la instalacion rm: cannot remove ‘openshift-origin-server-v3.11.0-0cb
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:~/openshift-origin-server-v3.11.0-0cbc58b-linux-64bit:~/installation/istio-1.0.2/bin
+oc cluster down
+for i in $(mount | grep openshift | awk '{ print $3}'); do sudo umount "$i"; done && sudo rm -rf openshift*
+#rm -fR ~/installation
+
+# Descarga OKD
+wget https://github.com/openshift/origin/releases/download/v3.11.0/openshift-origin-server-v3.11.0-0cbc58b-linux-64bit.tar.gz
+
+# Descomprimir OKD
+tar xzvf openshift-origin-server-v3.11.0-0cbc58b-linux-64bit.tar.gz
+
+# Exportar el PATH
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:~/openshift-origin-server-v3.11.0-0cbc58b-linux-64bit
+
+# Cambio de directorio
+cd openshift-origin-server-v3.11.0-0cbc58b-linux-64bit
+
+# Iniciar el Cluster 
+oc cluster up --public-hostname=35.193.67.204  # oc cluster down # oc cluster up --public-hostname=35.193.67.204 
+
+# Ingresar con el usuario system
+oc login -u system:admin
+
+# Agrenado rol al usurio admin
+oc adm policy add-cluster-role-to-user cluster-admin admin
+
+# Probar el ingreso con usuario
+https://172.22.71.6:8443
+
+# Creando directorio de instalacion de Istio
+#mkdir -p ~/installation && cd ~/installation
+
+# Descargando Istio
+#wget -c https://github.com/istio/istio/releases/download/1.0.5/istio-1.0.5-linux.tar.gz -P ~/installation
+#tar xzvf istio-1.0.5-linux.tar.gz
+# Aplicando politicas en Openshift
+oc adm policy add-scc-to-user anyuid -z istio-ingress-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z default -n istio-system
+oc adm policy add-scc-to-user anyuid -z prometheus -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-egressgateway-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-citadel-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-ingressgateway-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-cleanup-old-ca-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-mixer-post-install-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-mixer-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-pilot-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-sidecar-injector-service-account -n istio-system
+oc adm policy add-scc-to-user anyuid -z istio-galley-service-account -n istio-system
+oc adm policy add-scc-to-user privileged -z default -n istio-system
+oc adm policy add-scc-to-user privileged -z default -n default
+
+# Instalando Istio
+oc login -u system:admin
+oc apply -f ~/installation/istio-1.0.5/install/kubernetes/helm/istio/templates/crds.yaml
+oc apply -f ~/installation/istio-1.0.5/install/kubernetes/istio-demo-auth.yaml
+oc get pods -n istio-system
+
+# Instalando app de demo
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:~/openshift-origin-server-v3.11.0-0cbc58b-linux-64bit:~/installation/istio-1.0.5/bin
+oc project default
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo.yaml)
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/bookinfo-gateway.yaml
+
+oc delete -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo.yaml)
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/bookinfo-gateway.yaml
+
+# Habilitando las rutas
+oc expose svc istio-ingressgateway -n istio-system; \
+oc expose svc servicegraph -n istio-system; \
+oc expose svc grafana -n istio-system; \
+oc expose svc prometheus -n istio-system; \
+oc expose svc tracing -n istio-system
+
+# Instalando Kiali
+IMAGE_VERSION="v0.12.0"
+JAEGER_URL="http://jaeger-query-istio-system.172.22.71.6.nip.io"
+GRAFANA_URL="http://grafana-istio-system.172.22.71.6.nip.io"
+curl -L http://git.io/getLatestKiali | bash
+
+
+###################################################################################################################
+############################  PRUEBAS #############################################################################
+###################################################################################################################
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/destination-rule-all-mtls.yaml
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/destination-rule-all-mtls.yaml
+
+###################################################################################################################
+# CANARY RELEASE - MONGODB
+###################################################################################################################
+export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:~/openshift-origin-server-v3.11.0-0cbc58b-linux-64bit:~/installation/istio-1.0.5/bin
+oc login -u system:admin
+oc project default
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/destination-rule-all-mtls.yaml
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-v1-db-eq.yaml
+
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-db.yaml)
+
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-ratings-v2.yaml)
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-v1-95-v2-5-db-eq.yaml
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-v1-0-v2-100-db-eq.yaml
+
+------------------------------------------------------------------------------------------------------------------------------------------
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/destination-rule-all-mtls.yaml
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-v1-db-eq.yaml
+
+oc delete -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-db.yaml)
+
+oc delete -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-ratings-v2.yaml)
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-v1-95-v2-5-db-eq.yaml
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-v1-0-v2-100-db-eq.yaml
+
+##################################################################################################################
+# EGRESS BOOKINFO GOOGLE
+##################################################################################################################
+# https://istio.io/blog/2018/egress-https/
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-details-v1-eq.yaml
+
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-details-v2.yaml)
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/egress-rule-google-apis.yaml
+
+oc apply -f  ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-details-v1-v2-eq.yaml
+
+
+------------------------------------------------------------------------------------------------------------------------------------------
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-details-v1-eq.yaml
+
+oc delete -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-details-v2.yaml)
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/egress-rule-google-apis.yaml
+
+oc delete -f  ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-details-v1-v2-eq.yaml
+
+##################################################################################################################
+# EGRESS CNN
+##################################################################################################################
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/sleep/sleep.yaml)
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/ServiceEntry-CNN.yaml
+
+export SOURCE_POD=$(kubectl get pod -l app=sleep -o jsonpath={.items..metadata.name})
+
+watch kubectl exec -it $SOURCE_POD -c sleep -- curl -sL -o /dev/null -D - http://edition.cnn.com/politics
+
+##kubectl exec -it $SOURCE_POD -c sleep -- sh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+# Generando una falla para Ratings
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-test-abort.yaml
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/virtual-service-ratings-test-abort.yaml
+
+
+
+
+
+
+
+##################################################################################################################
+#EGRESS
+# https://istio.io/blog/2018/egress-https/
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-details-v2.yaml)
+
+oc apply -f ~/installation/istio-1.0.5/samples/bookinfo/networking/egress-rule-google-apis.yaml
+
+
+oc delete -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/bookinfo/platform/kube/bookinfo-details-v2.yaml)
+
+oc delete -f ~/installation/istio-1.0.5/samples/bookinfo/networking/egress-rule-google-apis.yaml
+
+.-------------------------------------------------------------------------------------------------------------
+## https://istio.io/docs/tasks/traffic-management/egress/
+## https://istio.io/docs/reference/config/istio.networking.v1alpha3/#HTTPRetry
+## https://istio.io/docs/examples/advanced-egress/egress-tls-origination/
+## https://istio.io/docs/examples/advanced-egress/egress-gateway/
+
+
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.5/samples/sleep/sleep.yaml)
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: httpbin-ext
+spec:
+  hosts:
+  - httpbin.org
+  ports:
+  - number: 80
+    name: http
+    protocol: HTTP
+  resolution: DNS
+  location: MESH_EXTERNAL
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: ServiceEntry
+metadata:
+  name: google
+spec:
+  hosts:
+  - www.google.com
+  ports:
+  - number: 443
+    name: https
+    protocol: HTTPS
+  resolution: DNS
+  location: MESH_EXTERNAL
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: google
+spec:
+  hosts:
+  - www.google.com
+  tls:
+  - match:
+    - port: 443
+      sni_hosts:
+      - www.google.com
+    route:
+    - destination:
+        host: www.google.com
+        port:
+          number: 443
+      weight: 100
+EOF
+
+
+cat <<EOF | kubectl apply -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: httpbin-ext
+spec:
+  hosts:
+    - httpbin.org
+  http:
+  - timeout: 3s
+    route:
+      - destination:
+          host: httpbin.org
+        weight: 100
+EOF
+
+
+
+
+
+
+
+
+
+
+
+
+
+---------
+https://github.com/istio/istio/tree/master/samples/bookinfo/src
+
+https://academy.datastax.com/units/getting-started-apache-cassandra-and-nodejs?resource=getting-started-apache-cassandra-and-nodejs
+
+
+http://172.22.71.6:9080/ratings/9
+
+http://istio-ingressgateway-istio-system.172.22.71.6.nip.io/api/v1/products/1/ratings
+
+
+https://istio.io/blog/2018/egress-https/
+
+
+
+
+----------------
+# Generando una falla para Ratings
+oc apply -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-ratings-test-abort.yaml
+oc apply -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-ratings-test-delay.yaml
+
+oc delete -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-ratings-test-abort.yaml
+oc delete -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-ratings-test-delay.yaml
+
+--------------------
+# Enviando todo el trafico hacia Reviews v3
+oc apply -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-reviews-v3.yaml
+oc delete -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-reviews-v3.yaml
+
+---------------------
+# Haciendo un Canary Realease para Details
+oc apply -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-details-v1.yaml
+oc apply -f <(istioctl kube-inject -f ~/installation/istio-1.0.2/samples/bookinfo/platform/kube/bookinfo-details-v2.yaml)
+oc apply -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-details-90-10.yaml
+Modificar a 50% 50%
+
+
+oc delete -f <(istioctl kube-inject -f ~/installation/istio-1.0.2/samples/bookinfo/platform/kube/bookinfo-details-v2.yaml)
+oc delete -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-details-v1.yaml
+oc delete -f ~/installation/istio-1.0.2/samples/bookinfo/networking/virtual-service-details-90-10.yaml
+
+
+----------------------------
+oc apply -f <(istioctl kube-inject -f samples/httpbin/httpbin.yaml)
+
+
+cat <<EOF | oc delete -f -
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: httpbin
+spec:
+  host: httpbin
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 1
+      http:
+        http1MaxPendingRequests: 1
+        maxRequestsPerConnection: 1
+    outlierDetection:
+      consecutiveErrors: 1
+      interval: 1s
+      baseEjectionTime: 3m
+      maxEjectionPercent: 100
+EOF
+
+oc apply -f <(istioctl kube-inject -f samples/httpbin/sample-client/fortio-deploy.yaml)
+
+FORTIO_POD=$(oc get pod | grep fortio | awk '{ print $1 }')
+
+oc exec -it $FORTIO_POD  -c fortio /usr/local/bin/fortio -- load - curl  http://httpbin:8000/get
+
+
+oc delete svc httpbin -n default
+
+
+
+
+
+
+
+
+
+
+---------------------------------------------------------------------------
+# Construyendo una imagen Docker para la version 2 de Details
+-bash-4.2# cat Dockerfile
+FROM istio/examples-bookinfo-details-v1:1.8.0
+-bash-4.2#
+---------------------------------------------------------------------------
+docker image build -t erickeliseo/examples-bookinfo-details-v2:1.8.0 .
+docker push erickeliseo/examples-bookinfo-details-v2:1.8.0
+---------------------------------------------------------------------------
+
+
+
+
+
+10874
+
+UR = miercoles 7 am
+CC = Jueves 7 pm
+CT = Viernes 7 am
+
+
+
